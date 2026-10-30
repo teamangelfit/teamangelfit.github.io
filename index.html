@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TeamAngelFit">
 <title>TeamAngelFit</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #151515; overflow: hidden; }
   #wrap {
@@ -34,6 +37,12 @@
   var EXEC = 'https://script.google.com/macros/s/AKfycbwEjy4qlz0JPDYLtE1HdNZItA9YhVeiOAflHp-yIFVRfAL5pV4Rs78R0h8wEH1r3CBRAQ/exec';
 
   var q = new URLSearchParams(location.search);
+  // Instalada como app se abre con ?pwa=1: se recupera el último enlace abierto (cliente o panel)
+  try {
+    if (q.get('cliente') || q.get('c') || q.get('coach')) localStorage.setItem('taf_q', location.search);
+    else { var sv = localStorage.getItem('taf_q'); if (sv) q = new URLSearchParams(sv); }
+  } catch (e) { }
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () { });
   // Google reserva el parámetro "c": los enlaces antiguos ?c= se pasan como ?cliente=
   if (q.get('c') && !q.get('cliente')) { q.set('cliente', q.get('c')); q.delete('c'); }
   q.set('host', location.origin + location.pathname); // para que el panel cree los enlaces con esta web
