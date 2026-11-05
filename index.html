@@ -43,6 +43,34 @@
     else { var sv = localStorage.getItem('taf_q'); if (sv) q = new URLSearchParams(sv); }
   } catch (e) { }
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () { });
+
+  // Face ID / huella (WebAuthn): se hace aquí porque el iframe de Google no puede pedirlo. La app lo pide con postMessage.
+  function b64(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); }
+  function unb64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
+  function azar(n) { return crypto.getRandomValues(new Uint8Array(n)); }
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.taf !== 'fid' || !/\.googleusercontent\.com$/.test(new URL(e.origin === 'null' ? 'https://x' : e.origin).hostname)) return;
+    function responder(ok, msg) { e.source.postMessage({ taf: 'fid', ok: ok, msg: msg || '' }, e.origin); }
+    if (!window.PublicKeyCredential) { responder(false, 'Este móvil o navegador no permite Face ID aquí'); return; }
+    var p;
+    if (e.data.tipo === 'create') {
+      p = navigator.credentials.create({ publicKey: {
+        challenge: azar(32), rp: { name: 'TAF', id: location.hostname },
+        user: { id: azar(16), name: 'entrenador', displayName: 'Entrenador TAF' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+        timeout: 60000
+      } }).then(function (c) { localStorage.setItem('taf_fid_id', b64(c.rawId)); });
+    } else {
+      var id = null; try { id = localStorage.getItem('taf_fid_id'); } catch (er) { }
+      if (!id) { responder(false, 'Activa Face ID otra vez desde Ajustes'); return; }
+      p = navigator.credentials.get({ publicKey: {
+        challenge: azar(32), rpId: location.hostname, userVerification: 'required', timeout: 60000,
+        allowCredentials: [{ type: 'public-key', id: unb64(id) }]
+      } });
+    }
+    p.then(function () { responder(true); }).catch(function (er) { responder(false, er && er.name === 'NotAllowedError' ? 'Cancelado o no verificado' : (er && er.message) || 'No se ha podido verificar'); });
+  });
   // Google reserva el parámetro "c": los enlaces antiguos ?c= se pasan como ?cliente=
   if (q.get('c') && !q.get('cliente')) { q.set('cliente', q.get('c')); q.delete('c'); }
   q.set('host', location.origin + location.pathname); // para que el panel cree los enlaces con esta web
