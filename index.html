@@ -52,7 +52,20 @@
   function unb64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
   function azar(n) { return crypto.getRandomValues(new Uint8Array(n)); }
   window.addEventListener('message', function (e) {
-    if (!e.data || e.data.taf !== 'fid' || !/\.googleusercontent\.com$/.test(new URL(e.origin === 'null' ? 'https://x' : e.origin).hostname)) return;
+    if (!e.data || (e.data.taf !== 'fid' && e.data.taf !== 'ses') || !/\.googleusercontent\.com$/.test(new URL(e.origin === 'null' ? 'https://x' : e.origin).hostname)) return;
+    // Sesión de 7 días y Face ID se guardan aquí: en iPhone se borra lo que guarda el iframe de Google
+    if (e.data.taf === 'ses') {
+      try {
+        if (e.data.op === 'set') {
+          if ('s' in e.data) { if (e.data.s) localStorage.setItem('taf_sess', JSON.stringify(e.data.s)); else localStorage.removeItem('taf_sess'); }
+          if ('fid' in e.data) { if (e.data.fid) localStorage.setItem('taf_fid', '1'); else localStorage.removeItem('taf_fid'); }
+          return;
+        }
+        var s = JSON.parse(localStorage.getItem('taf_sess') || 'null');
+        e.source.postMessage({ taf: 'ses', s: s, fid: localStorage.getItem('taf_fid') === '1' && !!localStorage.getItem('taf_fid_id') }, e.origin);
+      } catch (er) { e.source.postMessage({ taf: 'ses', s: null, fid: false }, e.origin); }
+      return;
+    }
     function responder(ok, msg) { e.source.postMessage({ taf: 'fid', ok: ok, msg: msg || '' }, e.origin); }
     if (!window.PublicKeyCredential) { responder(false, 'Este móvil o navegador no permite Face ID aquí'); return; }
     // Safari solo lo permite tras un toque en esta misma página, no vale el toque dentro del iframe
