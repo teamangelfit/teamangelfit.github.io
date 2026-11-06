@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TeamAngelFit">
 <title>TeamAngelFit</title>
-<!-- v18 -->
+<!-- v19 -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -57,6 +57,7 @@
     // Sesión de 7 días y Face ID se guardan aquí: en iPhone se borra lo que guarda el iframe de Google
     if (e.data.taf === 'ses') {
       try {
+        if (e.data.op === 't') { window.tafCarga = Math.round(performance.now()); return; } // ms hasta ver el panel
         if (e.data.op === 'set') {
           if ('s' in e.data) { if (e.data.s) localStorage.setItem('taf_sess', JSON.stringify(e.data.s)); else localStorage.removeItem('taf_sess'); }
           if ('fid' in e.data) { if (e.data.fid) localStorage.setItem('taf_fid', '1'); else localStorage.removeItem('taf_fid'); }
@@ -69,14 +70,21 @@
     }
     function responder(ok, msg) { e.source.postMessage({ taf: 'fid', ok: ok, msg: msg || '' }, e.origin); }
     if (!window.PublicKeyCredential) { responder(false, 'Este móvil o navegador no permite Face ID aquí'); return; }
-    // Safari solo lo permite tras un toque en esta misma página, no vale el toque dentro del iframe
-    var tipo = e.data.tipo, ov = document.createElement('div');
+    // Primero se intenta sin tocar nada. Safari lo rechaza al instante si no hay un toque en esta página:
+    // entonces sale un botón a pantalla completa (el toque dentro del iframe no le vale)
+    var tipo = e.data.tipo, t0 = Date.now();
+    verificar(tipo, function (ok, msg, er) {
+      if (!ok && er && er.name === 'NotAllowedError' && Date.now() - t0 < 1500) boton(tipo, responder); else responder(ok, msg);
+    });
+  });
+  function boton(tipo, responder) {
+    var ov = document.createElement('div');
     ov.id = 'fidOv';
     ov.innerHTML = '<button id="fidSi">Confirmar con Face ID o huella</button><button id="fidNo">Cancelar</button>';
     document.body.appendChild(ov);
     document.getElementById('fidNo').onclick = function () { ov.remove(); responder(false, 'Cancelado'); };
     document.getElementById('fidSi').onclick = function () { ov.remove(); verificar(tipo, responder); };
-  });
+  }
   function verificar(tipo, responder) {
     var p;
     if (tipo === 'create') {
@@ -95,7 +103,7 @@
         allowCredentials: [{ type: 'public-key', id: unb64(id) }]
       } });
     }
-    p.then(function () { responder(true); }).catch(function (er) { responder(false, er && er.name === 'NotAllowedError' ? 'Cancelado o no verificado' : (er && er.message) || 'No se ha podido verificar'); });
+    p.then(function () { responder(true); }).catch(function (er) { responder(false, er && er.name === 'NotAllowedError' ? 'Cancelado o no verificado' : (er && er.message) || 'No se ha podido verificar', er); });
   }
   // Google reserva el parámetro "c": los enlaces antiguos ?c= se pasan como ?cliente=
   if (q.get('c') && !q.get('cliente')) { q.set('cliente', q.get('c')); q.delete('c'); }
