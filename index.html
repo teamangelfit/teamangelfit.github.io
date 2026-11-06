@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TeamAngelFit">
 <title>TeamAngelFit</title>
-<!-- v19 -->
+<!-- v22 -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -29,6 +29,10 @@
   #splash i { display: block; width: 70px; height: 4px; background: #e01e1e; margin: 6px 0 14px; }
   #splash.off { opacity: 0; pointer-events: none; }
   #fidOv { position: fixed; inset: 0; z-index: 9; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; background: rgba(0,0,0,.75); }
+  #instBar { position: fixed; left: 8px; right: 8px; top: calc(env(safe-area-inset-top) + 8px); z-index: 8; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #151515; color: #fff; font: 600 14px system-ui, -apple-system, sans-serif; box-shadow: 0 4px 16px rgba(0,0,0,.3); }
+  #instBar span { flex: 1; }
+  #instBar #instSi { padding: 8px 12px; border: 0; border-radius: 8px; background: #e01e1e; color: #fff; font: 700 14px system-ui, sans-serif; text-decoration: none; white-space: nowrap; }
+  #instBar #instX { border: 0; background: none; color: #aaa; font-size: 18px; padding: 4px; }
   #fidOv button { width: 100%; max-width: 340px; padding: 16px; border: 0; border-radius: 12px; font: 700 16px system-ui, -apple-system, sans-serif; background: #e0e0e0; color: #151515; }
   #fidOv #fidSi { background: #e01e1e; color: #fff; }
 </style>
@@ -105,6 +109,30 @@
     }
     p.then(function () { responder(true); }).catch(function (er) { responder(false, er && er.name === 'NotAllowedError' ? 'Cancelado o no verificado' : (er && er.message) || 'No se ha podido verificar', er); });
   }
+  // Instalar: los navegadores dentro de WhatsApp/Instagram/Facebook no dejan instalar → aviso para abrir en Chrome.
+  // En Chrome, botón «Instalar app» (beforeinstallprompt). Si se cierra, no vuelve a salir en 7 días.
+  (function () {
+    var ua = navigator.userAgent, android = /Android/i.test(ua);
+    var instalada = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+    var no = 0; try { no = +localStorage.getItem('taf_inst_no') || 0; } catch (e) { }
+    if (instalada || no > Date.now() - 7 * 864e5) return;
+    function barra(html) {
+      var b = document.createElement('div'); b.id = 'instBar'; b.innerHTML = html + '<button id="instX" aria-label="Cerrar">✕</button>';
+      document.body.appendChild(b);
+      document.getElementById('instX').onclick = function () { b.remove(); try { localStorage.setItem('taf_inst_no', Date.now()); } catch (e) { } };
+      return b;
+    }
+    if (/; wv\)|Instagram|FBAN|FBAV|WhatsApp|Line\/|MicroMessenger/i.test(ua)) {
+      if (android) barra('<span>Para instalar la app, ábrela en Chrome</span><a id="instSi" href="intent:/\/' + location.host + location.pathname + location.search + '#Intent;scheme=https;package=com.android.chrome;end">Abrir en Chrome</a>');
+      else barra('<span>Para instalarla, toca ··· y elige «Abrir en Safari»</span>');
+      return;
+    }
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      var b = barra('<span>Instala TAF en tu móvil</span><button id="instSi">Instalar app</button>');
+      document.getElementById('instSi').onclick = function () { b.remove(); e.prompt(); };
+    });
+  })();
   // Google reserva el parámetro "c": los enlaces antiguos ?c= se pasan como ?cliente=
   if (q.get('c') && !q.get('cliente')) { q.set('cliente', q.get('c')); q.delete('c'); }
   q.set('host', location.origin + location.pathname); // para que el panel cree los enlaces con esta web
