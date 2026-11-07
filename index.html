@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TeamAngelFit">
 <title>TeamAngelFit</title>
-<!-- v22b -->
+<!-- v24 -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -57,7 +57,8 @@
   function unb64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
   function azar(n) { return crypto.getRandomValues(new Uint8Array(n)); }
   window.addEventListener('message', function (e) {
-    if (!e.data || (e.data.taf !== 'fid' && e.data.taf !== 'ses') || !/\.googleusercontent\.com$/.test(new URL(e.origin === 'null' ? 'https://x' : e.origin).hostname)) return;
+    if (!e.data || (e.data.taf !== 'fid' && e.data.taf !== 'ses' && e.data.taf !== 'push') ||!/\.googleusercontent\.com$/.test(new URL(e.origin === 'null' ? 'https://x' : e.origin).hostname)) return;
+    if (e.data.taf === 'push') { pushPedir(e); return; }
     // Sesión de 7 días y Face ID se guardan aquí: en iPhone se borra lo que guarda el iframe de Google
     if (e.data.taf === 'ses') {
       try {
@@ -81,6 +82,33 @@
       if (!ok && er && er.name === 'NotAllowedError' && Date.now() - t0 < 1500) boton(tipo, responder); else responder(ok, msg);
     });
   });
+  // Avisos al móvil (Firebase Cloud Messaging). El permiso se pide con un toque en esta página (iPhone lo exige)
+  var GS = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  var FB = { apiKey: 'AIzaSyCQ5EfwfT6nL5hgKgrdeUeyqS9UI801jic', authDomain: 'taf-app-c9455.firebaseapp.com', projectId: 'taf-app-c9455', storageBucket: 'taf-app-c9455.firebasestorage.app', messagingSenderId: '968765189360', appId: '1:968765189360:web:48fac0424b4717eca32635' };
+  var VAPID = 'BHAEpFjhTQrg7zoJ_NpKcqlBJzXZqZbDDLw39mYu6CaIGaOa8D_bazXQ70Q97CBjMMB43Lkv7uoYBS4EUA_OYOk';
+  function cargar(src) { return new Promise(function (ok, ko) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { ko(new Error('Sin conexión')); }; document.head.appendChild(s); }); }
+  function pushPedir(e) {
+    function responder(ok, msg, token) { e.source.postMessage({ taf: 'push', ok: ok, msg: msg || '', token: token || '' }, e.origin); }
+    var instalada = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+    if (/iPhone|iPad/i.test(navigator.userAgent) && !instalada) { responder(false, 'En iPhone, primero añade la app a la pantalla de inicio (Compartir > Añadir a pantalla de inicio) y ábrela desde ahí'); return; }
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) { responder(false, 'Este móvil o navegador no permite avisos'); return; }
+    var ov = document.createElement('div');
+    ov.id = 'fidOv';
+    ov.innerHTML = '<button id="fidSi">Activar avisos</button><button id="fidNo">Ahora no</button>';
+    document.body.appendChild(ov);
+    document.getElementById('fidNo').onclick = function () { ov.remove(); responder(false, 'Avisos no activados'); };
+    document.getElementById('fidSi').onclick = function () {
+      ov.remove();
+      Notification.requestPermission().then(function (p) {
+        if (p !== 'granted') throw new Error('No has dado permiso para los avisos. Actívalo en los ajustes del móvil.');
+        return Promise.all([navigator.serviceWorker.ready, cargar(GS + 'firebase-app-compat.js').then(function () { return cargar(GS + 'firebase-messaging-compat.js'); })]);
+      }).then(function (x) {
+        if (!firebase.apps.length) firebase.initializeApp(FB);
+        return firebase.messaging().getToken({ vapidKey: VAPID, serviceWorkerRegistration: x[0] });
+      }).then(function (t) { if (!t) throw new Error('No se han podido activar'); responder(true, '', t); })
+        .catch(function (er) { responder(false, er.message); });
+    };
+  }
   function boton(tipo, responder) {
     var ov = document.createElement('div');
     ov.id = 'fidOv';
