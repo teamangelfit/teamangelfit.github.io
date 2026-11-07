@@ -9,16 +9,17 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TeamAngelFit">
 <title>TeamAngelFit</title>
-<!-- v24 -->
+<!-- v26 -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-  html, body { margin: 0; padding: 0; height: 100%; background: #151515; overflow: hidden; }
+  /* Arriba oscuro (barra de estado) y abajo blanco como la barra de la app: si el móvil deja hueco abajo, no se nota */
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: linear-gradient(#151515 0 50%, #fff 50% 100%); }
   #wrap {
-    position: fixed; inset: 0; box-sizing: border-box;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; box-sizing: border-box;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    height: 100vh; height: 100dvh;
+    background: linear-gradient(#151515 0 50%, #fff 50% 100%);
   }
   iframe { display: block; width: 100%; height: 100%; border: 0; margin: 0; background: #f2f2f2; }
   #splash {
