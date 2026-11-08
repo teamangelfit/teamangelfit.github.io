@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TAF">
 <title>TeamAngelFit</title>
-<!-- v28d -->
+<!-- v28f -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -177,7 +177,13 @@
   if (EXEC.indexOf('https://script.google.com/') !== 0) {
     sp.innerHTML = '<b>TAF</b><i></i><span style="letter-spacing:0;font-weight:600;padding:0 24px;text-align:center">Falta poner la URL /exec en index.html</span>';
   } else {
-    f.onload = function () { sp.className = 'off'; };
+    // Google calcula el alto de la app al cargar; en el iPhone instalado lo hace antes de colocar la barra de estado
+    // y la app queda más corta (hueco blanco abajo). Cambiar el alto del iframe un instante le obliga a recalcularlo.
+    var reajusta = function () { f.style.height = 'calc(100% - 1px)'; requestAnimationFrame(function () { requestAnimationFrame(function () { f.style.height = ''; }); }); };
+    window.addEventListener('resize', reajusta);
+    window.addEventListener('orientationchange', function () { setTimeout(reajusta, 300); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) setTimeout(reajusta, 200); });
+    f.onload = function () { sp.className = 'off'; [300, 1000, 2500, 5000].forEach(function (t) { setTimeout(reajusta, t); }); };
     setTimeout(function () { sp.className = 'off'; }, 8000);
     f.src = EXEC + '?' + q.toString();
   }
