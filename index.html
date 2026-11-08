@@ -9,12 +9,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TAF">
 <title>TeamAngelFit</title>
-<!-- v28i: diseño de abajo como la v24 + marco alargado lo que recorta Google -->
+<!-- v29: v24 + fondo blanco abajo + marco alargado lo que recorta Google -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-  html, body { margin: 0; padding: 0; height: 100%; background: #151515; overflow: hidden; }
+  /* negro solo arriba (barra de estado) y blanco abajo, el mismo de la barra de la app: aunque Google deje la app más corta, se ve un único bloque blanco hasta el borde */
+  html, body { margin: 0; padding: 0; height: 100%; background: linear-gradient(#151515 0 50%, #fff 50% 100%); overflow: hidden; }
   #wrap {
     position: fixed; inset: 0; box-sizing: border-box;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
