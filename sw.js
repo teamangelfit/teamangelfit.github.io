@@ -1,5 +1,5 @@
 // Service worker mínimo: hace la web instalable como app. Los datos siempre se piden a la red.
-// v28d: la página se pide siempre a la red sin caché del navegador (antes el iPhone podía seguir con el index viejo)
+// v28f: la página se pide siempre a la red sin caché del navegador (antes el iPhone podía seguir con el index viejo)
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', e => {
