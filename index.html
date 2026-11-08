@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TAF">
 <title>TeamAngelFit</title>
-<!-- v29: v24 + fondo blanco abajo + marco alargado lo que recorta Google -->
+<!-- v29c: v24 + fondo blanco abajo + sin margen abajo (el blanco de Google hace de zona del indicador) -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -18,7 +18,8 @@
   html, body { margin: 0; padding: 0; height: 100%; background: linear-gradient(#151515 0 50%, #fff 50% 100%); overflow: hidden; }
   #wrap {
     position: fixed; inset: 0; box-sizing: border-box;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    /* abajo sin margen: Google ya deja la app ~35 pt más corta y ese blanco hace de zona del indicador de inicio */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
     height: 100vh; height: 100dvh;
   }
   iframe { display: block; width: 100%; height: 100%; border: 0; margin: 0; background: #f2f2f2; }
@@ -63,13 +64,8 @@
     // Sesión de 7 días y Face ID se guardan aquí: en iPhone se borra lo que guarda el iframe de Google
     if (e.data.taf === 'ses') {
       try {
-        // La página de Google le da a la app menos alto del que tiene el marco (en el iPhone, unos 35 pt): la app nos dice
-        // cuánto tiene y alargamos el marco esa diferencia; lo que sobra de Google queda escondido por debajo (#clip)
-        if (e.data.op === 'alto') {
-          var fr = document.getElementById('app'), d = document.getElementById('clip').clientHeight - (+e.data.h || 0);
-          if (Math.abs(d) > 1 && Math.abs(d) < 120 && (window.tafAj = (window.tafAj || 0) + 1) <= 6) fr.style.height = Math.round(fr.getBoundingClientRect().height + d) + 'px';
-          return;
-        }
+        // la app manda su alto; ya no se alarga el marco: el blanco que deja Google abajo hace de zona del indicador de inicio
+        if (e.data.op === 'alto') return;
         if (e.data.op === 't') { window.tafCarga = Math.round(performance.now()); return; } // ms hasta ver el panel
         if (e.data.op === 'set') {
           if ('s' in e.data) { if (e.data.s) localStorage.setItem('taf_sess', JSON.stringify(e.data.s)); else localStorage.removeItem('taf_sess'); }
