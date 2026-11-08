@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TAF">
 <title>TeamAngelFit</title>
-<!-- v28a -->
+<!-- v28d -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -52,7 +52,7 @@
     if (q.get('cliente') || q.get('c') || q.get('coach')) localStorage.setItem('taf_q', location.search);
     else { var sv = localStorage.getItem('taf_q'); if (sv) q = new URLSearchParams(sv); }
   } catch (e) { }
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () { });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (r) { r.update(); }).catch(function () { });
 
   // Face ID / huella (WebAuthn): se hace aquí porque el iframe de Google no puede pedirlo. La app lo pide con postMessage.
   function b64(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); }
