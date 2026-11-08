@@ -9,18 +9,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="TAF">
 <title>TeamAngelFit</title>
-<!-- v28f -->
+<!-- v28h: diseño de abajo como la v24 -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-  /* Arriba oscuro (barra de estado) y abajo blanco como la barra de la app: si el móvil deja hueco abajo, no se nota */
-  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: linear-gradient(#151515 0 50%, #fff 50% 100%); }
+  html, body { margin: 0; padding: 0; height: 100%; background: #151515; overflow: hidden; }
   #wrap {
-    position: fixed; top: 0; right: 0; bottom: 0; left: 0; box-sizing: border-box;
-    /* abajo sin relleno: el iframe llega al borde y la barra de la app suma el hueco del iPhone (se lo pasamos con postMessage) */
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
-    background: linear-gradient(#151515 0 50%, #fff 50% 100%);
+    position: fixed; inset: 0; box-sizing: border-box;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    height: 100vh; height: 100dvh;
   }
   iframe { display: block; width: 100%; height: 100%; border: 0; margin: 0; background: #f2f2f2; }
   #splash {
@@ -65,11 +63,6 @@
     if (e.data.taf === 'ses') {
       try {
         if (e.data.op === 't') { window.tafCarga = Math.round(performance.now()); return; } // ms hasta ver el panel
-        if (e.data.op === 'sab') { // alto de la barra de inicio del iPhone (env() no llega al iframe)
-          var d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;padding-bottom:env(safe-area-inset-bottom)';
-          document.body.appendChild(d); var px = d.offsetHeight; d.remove();
-          e.source.postMessage({ taf: 'sab', px: px }, e.origin); return;
-        }
         if (e.data.op === 'set') {
           if ('s' in e.data) { if (e.data.s) localStorage.setItem('taf_sess', JSON.stringify(e.data.s)); else localStorage.removeItem('taf_sess'); }
           if ('fid' in e.data) { if (e.data.fid) localStorage.setItem('taf_fid', '1'); else localStorage.removeItem('taf_fid'); }
@@ -177,13 +170,7 @@
   if (EXEC.indexOf('https://script.google.com/') !== 0) {
     sp.innerHTML = '<b>TAF</b><i></i><span style="letter-spacing:0;font-weight:600;padding:0 24px;text-align:center">Falta poner la URL /exec en index.html</span>';
   } else {
-    // Google calcula el alto de la app al cargar; en el iPhone instalado lo hace antes de colocar la barra de estado
-    // y la app queda más corta (hueco blanco abajo). Cambiar el alto del iframe un instante le obliga a recalcularlo.
-    var reajusta = function () { f.style.height = 'calc(100% - 1px)'; requestAnimationFrame(function () { requestAnimationFrame(function () { f.style.height = ''; }); }); };
-    window.addEventListener('resize', reajusta);
-    window.addEventListener('orientationchange', function () { setTimeout(reajusta, 300); });
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) setTimeout(reajusta, 200); });
-    f.onload = function () { sp.className = 'off'; [300, 1000, 2500, 5000].forEach(function (t) { setTimeout(reajusta, t); }); };
+    f.onload = function () { sp.className = 'off'; };
     setTimeout(function () { sp.className = 'off'; }, 8000);
     f.src = EXEC + '?' + q.toString();
   }
