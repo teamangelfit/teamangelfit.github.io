@@ -59,8 +59,9 @@
   function unb64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
   function azar(n) { return crypto.getRandomValues(new Uint8Array(n)); }
   window.addEventListener('message', function (e) {
-    if (!e.data || (e.data.taf !== 'fid' && e.data.taf !== 'ses' && e.data.taf !== 'push') ||!/\.googleusercontent\.com$/.test(new URL(e.origin === 'null' ? 'https://x' : e.origin).hostname)) return;
+    if (!e.data || (e.data.taf !== 'fid' && e.data.taf !== 'ses' && e.data.taf !== 'push' && e.data.taf !== 'share') ||!/\.googleusercontent\.com$/.test(new URL(e.origin === 'null' ? 'https://x' : e.origin).hostname)) return;
     if (e.data.taf === 'push') { pushPedir(e); return; }
+    if (e.data.taf === 'share') { compartir(e.data); return; }
     // Sesión de 7 días y Face ID se guardan aquí: en iPhone se borra lo que guarda el iframe de Google
     if (e.data.taf === 'ses') {
       try {
@@ -112,6 +113,27 @@
       }).then(function (t) { if (!t) throw new Error('No se han podido activar'); responder(true, '', t); })
         .catch(function (er) { responder(false, er.message); });
     };
+  }
+  // Compartir la foto de un alimento (panel > Biblioteca). Se hace aquí porque el iframe de Google no deja compartir.
+  function compartir(d) {
+    var base = { title: d.title || 'Alimento', text: d.text || d.title || '' };
+    function abrir() { window.open(d.url, '_blank'); }
+    function lanzar(data) {
+      if (!navigator.share) { abrir(); return; }
+      navigator.share(data).catch(function (er) {
+        if (er && er.name === 'AbortError') return;
+        var ov = document.createElement('div'); ov.id = 'fidOv';
+        ov.innerHTML = '<button id="fidSi">Compartir foto</button><button id="fidNo">Cancelar</button>';
+        document.body.appendChild(ov);
+        document.getElementById('fidNo').onclick = function () { ov.remove(); };
+        document.getElementById('fidSi').onclick = function () { ov.remove(); navigator.share(data).catch(function (e2) { if (!e2 || e2.name !== 'AbortError') abrir(); }); };
+      });
+    }
+    fetch(d.url).then(function (r) { return r.blob(); }).then(function (b) {
+      var f = new File([b], (base.title.replace(/[^\wáéíóúñü -]/gi, '') || 'alimento') + (/png/.test(b.type) ? '.png' : /webp/.test(b.type) ? '.webp' : '.jpg'), { type: b.type || 'image/jpeg' });
+      var data = { files: [f], title: base.title, text: base.text };
+      lanzar(navigator.canShare && navigator.canShare(data) ? data : { title: base.title, text: base.text, url: d.url });
+    }).catch(function () { lanzar({ title: base.title, text: base.text, url: d.url }); });
   }
   function boton(tipo, responder) {
     var ov = document.createElement('div');
