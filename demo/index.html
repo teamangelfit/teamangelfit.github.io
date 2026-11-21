@@ -80,7 +80,7 @@ nav button.on{color:var(--red)}
 </head>
 <body>
 <div id="app">
-  <div class="demo"><span>DEMO · DATOS DE EJEMPLO</span><a href="../qr/">✕ Salir</a></div>
+  <div class="demo"><span>DEMO MUY SIMPLIFICADA</span><a href="../qr/">✕ Salir</a></div>
   <header><div class="logo">TAF</div><div><b>Laura ♀</b><small>Plan: Definición · Bajar grasa</small></div></header>
 
   <!-- DIETA -->
@@ -91,6 +91,7 @@ nav button.on{color:var(--red)}
     <p class="tip">Toca un alimento para ver <b>la foto del producto</b> de tu súper</p>
     <h3>TU DÍA DE HOY</h3>
     <div id="meals"></div>
+    <p class="tip" style="margin-top:4px">Demo simplificada: en la app completa tienes <b>muchas más opciones</b> en cada comida.</p>
   </section>
 
   <!-- ENTRENO -->
@@ -99,6 +100,7 @@ nav button.on{color:var(--red)}
     <div class="prog"><i id="pbar"></i></div>
     <p class="tip" id="ptxt">0 de 13 series hechas</p>
     <div class="card" id="exs" style="margin-top:10px"></div>
+    <p class="tip">Demo simplificada: la app completa trae <b>muchas más funciones</b> de entreno.</p>
   </section>
 
   <!-- PROGRESO -->
@@ -118,7 +120,7 @@ nav button.on{color:var(--red)}
   <!-- MÁS -->
   <section id="t-mas" class="wrap" hidden>
     <div class="lock"><div class="e">🔒</div><h2>El resto, cuando empieces</h2>
-      <p>Esto es solo un trocito. La app es mía, hecha para trabajar contigo: tu dieta, tu entreno y tu progreso en el móvil, y yo detrás ajustándolo todo.</p></div>
+      <p>Esto es solo un trocito, muy simplificado. La app completa tiene <b>muchísimas más opciones</b>, todo personalizado para ti y una interfaz mucho mejor. Es mía, hecha para trabajar contigo, y yo detrás ajustándolo todo.</p></div>
     <div class="cta"><b>¿La quieres con tu plan?</b><p>Escríbeme TAF por privado y te explico cómo funciona.</p>
       <a class="btn wa" href="https://wa.me/34675497618?text=Hola%20Angel%2C%20he%20probado%20la%20demo%20de%20la%20app%20TAF%20y%20quiero%20info">Escríbeme por WhatsApp</a>
       <a class="btn ig" href="https://instagram.com/teamangelfit">Escríbeme por Instagram</a>
@@ -222,7 +224,7 @@ function tab(t){
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));
   scrollTo(0,0); seen.add(t);
   if(!ctaShown && seen.has('entreno') && seen.has('prog') && t!='mas'){ ctaShown=true;
-    setTimeout(()=>sheet(`<div class="wel"><div class="logo">TAF</div><h2>¿Te gusta?</h2><p>Así trabajo con mis clientes: todo en tu móvil y yo detrás ajustándolo. Escríbeme TAF por privado y te cuento.</p>${ctaBtns()}</div>`),1500); }
+    setTimeout(()=>sheet(`<div class="wel"><div class="logo">TAF</div><h2>¿Te gusta?</h2><p>Y esto es solo una versión muy simplificada: la app completa tiene muchas más opciones y todo personalizado para ti. Escríbeme TAF por privado y te cuento.</p>${ctaBtns()}</div>`),1500); }
 }
 document.querySelector('nav').onclick = e => { const b=e.target.closest('button'); if(b) tab(b.dataset.t); };
 document.body.addEventListener('click', e => {
@@ -237,7 +239,7 @@ renderMacros(); renderSup(); renderMeals(); renderEx(); renderChart();
 sheet(`<div class="wel"><div class="logo">TAF</div><h2>Así es la app TAF</h2>
  <p>Mi app propia: la herramienta con la que trabajo con mis clientes.</p>
  <ul><li>🍽️ Tu dieta, con los productos de tu súper</li><li>🏋️ Tu entreno, apuntando tus pesos</li><li>📈 Tu progreso y tu revisión semanal</li></ul>
- <p style="font-size:13px;color:#888">Es una demo con datos de ejemplo. Tócalo todo.</p>
+ <div style="background:#fff3f3;border:1.5px solid #e01e1e;border-radius:12px;padding:10px 12px;margin:12px 0 4px;font-size:13.5px;line-height:1.4;text-align:left"><b>⚠️ Ojo: esto es una demo muy simplificada.</b> La app completa tiene muchísimas más opciones, más personalización y una interfaz mucho más cuidada.</div><p style="font-size:13px;color:#888">Datos de ejemplo. Tócalo todo.</p>
  <button class="btn btnr" onclick="closeOv()">Probar la demo</button></div>`);
 </script>
 </body>
