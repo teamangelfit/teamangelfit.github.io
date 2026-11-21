@@ -59,10 +59,11 @@
   function unb64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
   function azar(n) { return crypto.getRandomValues(new Uint8Array(n)); }
   window.addEventListener('message', function (e) {
-    if (!e.data || (e.data.taf !== 'fid' && e.data.taf !== 'ses' && e.data.taf !== 'push' && e.data.taf !== 'share' && e.data.taf !== 'pip') ||!/\.googleusercontent\.com$/.test(new URL(e.origin === 'null' ? 'https://x' : e.origin).hostname)) return;
+    if (!e.data || (e.data.taf !== 'fid' && e.data.taf !== 'ses' && e.data.taf !== 'push' && e.data.taf !== 'share' && e.data.taf !== 'pip' && e.data.taf !== 'pipData') ||!/\.googleusercontent\.com$/.test(new URL(e.origin === 'null' ? 'https://x' : e.origin).hostname)) return;
     if (e.data.taf === 'push') { pushPedir(e); return; }
     if (e.data.taf === 'share') { compartir(e.data); return; }
     if (e.data.taf === 'pip') { pipAbrir(e.data); return; }
+    if (e.data.taf === 'pipData') { pipCargar(e.data); return; }
     // Sesión de 7 días y Face ID se guardan aquí: en iPhone se borra lo que guarda el iframe de Google
     if (e.data.taf === 'ses') {
       try {
@@ -279,6 +280,14 @@
       try { navigator.mediaSession.setActionHandler('enterpictureinpicture', function () { v.requestPictureInPicture().catch(function () { }); }); } catch (e) { }
       document.addEventListener('visibilitychange', function () { if (document.hidden && !pipActiva()) { try { v.requestPictureInPicture && v.requestPictureInPicture().catch(function () { }); } catch (e) { } } });
     });
+  }
+  // La app manda las comidas al entrar en la Dieta: el vídeo se deja preparado para abrir la ventanita con un solo toque
+  function pipCargar(d) {
+    if (pipActiva()) return;
+    PIP.cs = d.comidas || []; PIP.i = Math.max(0, Math.min(d.i || 0, PIP.cs.length - 1));
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    PIP.modo = ios ? 'rec' : 'stream';
+    if (PIP.cs.length) pipPreparar().catch(function () { });
   }
   function pipAbrir(d) {
     PIP.cs = d.comidas || []; PIP.i = Math.max(0, Math.min(d.i || 0, PIP.cs.length - 1));
