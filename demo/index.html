@@ -34,7 +34,7 @@ h3{font-size:12px;letter-spacing:1.5px;color:#555;margin:18px 2px 8px}
 .tick.on{background:var(--red);border-color:var(--red)}
 .row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;font:inherit;color:inherit}
 .row:first-child{border-top:0}
-.row .e{font-size:20px;width:26px;text-align:center}
+.row .e{font-size:20px;width:38px;height:38px;text-align:center;flex:none;display:flex;align-items:center;justify-content:center}.row .e img{width:38px;height:38px;object-fit:contain;border-radius:8px;background:#fff;border:1px solid #eee}
 .row .n{flex:1;font-weight:600;font-size:15px}.row .n small{display:block;font-weight:400;color:var(--sub);font-size:12px}
 .row .q{font-weight:800;font-size:16px}
 .tip{font-size:12.5px;color:var(--sub);text-align:center;margin:6px 0 2px}
@@ -68,6 +68,7 @@ nav button.on{color:var(--red)}
 @keyframes up{from{transform:translateY(40px);opacity:0}}
 .sheet h2{font-size:19px;margin-bottom:4px}.sheet .s{color:var(--sub);font-size:13px;margin-bottom:12px}
 .ph{width:150px;height:150px;margin:6px auto 12px;border-radius:12px;background:#f4f4f4;display:flex;align-items:center;justify-content:center;font-size:70px;overflow:hidden}
+.phs{display:flex;gap:10px;justify-content:center}.phs figure{margin:0;text-align:center}.phs .ph{width:140px;height:160px;margin:6px auto 4px}figcaption{font-size:11px;color:#888;font-weight:700;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
 .ph img{width:100%;height:100%;object-fit:contain;background:#fff}
 .mm{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;margin:10px 0 4px}
 .mm div{background:#f2f2f2;border-radius:10px;padding:8px 2px}.mm b{display:block;font-size:16px}.mm span{font-size:10px;color:#666;font-weight:700}
@@ -88,7 +89,7 @@ nav button.on{color:var(--red)}
     <div class="macros" id="macros"></div>
     <h3>TU SÚPER</h3>
     <div class="chips" id="supers"></div>
-    <p class="tip">Toca un alimento para ver <b>la foto del producto</b> de tu súper</p>
+    <p class="tip">Toca un alimento para ver <b>la foto del producto y su etiqueta</b></p>
     <h3>TU DÍA DE HOY</h3>
     <div id="meals"></div>
     <p class="tip" style="margin-top:4px">Demo simplificada: en la app completa tienes <b>muchas más opciones</b> en cada comida.</p>
@@ -145,22 +146,22 @@ const brand = k => k ? (sup==0 ? 'Hacendado' : 'Marca propia') : '';
 // [emoji, nombre, cantidad, nota, kcal, P, H, G, marca, foto (solo Mercadona)]
 const MEALS = [
  ['DESAYUNO','Tortitas con queso y pavo',[
-  ['🍘','Tortitas de arroz',30,'≈ 4 tortitas',115,2.4,24,0.9,'tort','img/tortitas.jpg'],
-  ['🧀','Queso fresco light',100,'',104,12,3.5,4.5,'queso','img/queso.jpg'],
-  ['🦃','Pechuga de pavo',60,'en lonchas',60,13,0.6,0.8,'pavo'],
-  ['🍌','Plátano',120,'≈ 1 plátano',107,1.3,24,0.4]]],
+  ['🍘','Tortitas de arroz',30,'≈ 4 tortitas',115,2.4,24,0.9,'tort',['img/tortitas.jpg']],
+  ['🧀','Queso fresco light',100,'',104,12,3.5,4.5,'queso',['img/queso.jpg']],
+  ['🦃','Pechuga de pavo',60,'finas lonchas',47,10.7,0.4,0.3,'pavo',['img/pavo.jpg']],
+  ['🍌','Plátano',120,'≈ 1 plátano',107,1.3,24,0.4,'',['https://prod-mercadona.imgix.net/images/ba9b063bd7972d5fccb927b9f80d5a5a.jpg?fit=crop&h=400&w=400']]]],
  ['COMIDA','Arroz con pollo y brócoli',[
-  ['🍚','Arroz basmati',70,'en seco',249,5,54,0.6,'arroz'],
-  ['🍗','Pechuga de pollo',150,'en crudo',165,35,0,2.6],
-  ['🥦','Brócoli',150,'',51,4,6,0.6],
-  ['🫒','Aceite de oliva',10,'≈ 1 cucharada',90,0,0,10]]],
+  ['🍚','Arroz basmati',70,'en seco',249,5,54,0.6,'arroz',['https://prod-mercadona.imgix.net/images/ff02e0b326c0d33682f76e66cc825dda.jpg?fit=crop&h=400&w=400','https://prod-mercadona.imgix.net/images/e0a2204756e15d5795665eb6aa6fd60d.jpg?fit=crop&h=400&w=400']],
+  ['🍗','Pechuga de pollo',150,'en crudo',165,35,0,2.6,'',['https://prod-mercadona.imgix.net/images/cfbe3b741d3a64cc637efe0c7bf0bb93.jpg?fit=crop&h=400&w=400','https://prod-mercadona.imgix.net/images/41588c0583252dc49ab4bf7c2765b4f4.jpeg?fit=crop&h=400&w=400']],
+  ['🥦','Brócoli',150,'',51,4,6,0.6,'',['https://prod-mercadona.imgix.net/images/2ef72b37fe1021e9ff4ea8f46f9204f8.jpg?fit=crop&h=400&w=400']],
+  ['🫒','Aceite de oliva virgen extra',10,'≈ 1 cucharada',90,0,0,10,'',['https://prod-mercadona.imgix.net/images/a5648e373920a10023a7ab6304eb0dc0.jpg?fit=crop&h=400&w=400','https://prod-mercadona.imgix.net/images/97013919c5b0bf60473bab330a8c24eb.jpg?fit=crop&h=400&w=400']]]],
  ['MERIENDA','Gachas de avena',[
-  ['🥣','Copos de avena',40,'en seco',150,5,24,2.8,'avena'],
-  ['🥛','Leche desnatada',250,'ml',85,8.5,12,0.5,'leche']]],
+  ['🥣','Copos de avena',40,'en seco',150,5,24,2.8,'avena',['https://prod-mercadona.imgix.net/images/d4337bb397a1e7f50b9a5f9e7bc175a9.jpeg?fit=crop&h=400&w=400','https://prod-mercadona.imgix.net/images/ff782da5345dd951e794e5a310f05aab.jpg?fit=crop&h=400&w=400']],
+  ['🥛','Leche desnatada',250,'ml',85,8.5,12,0.5,'leche',['https://prod-mercadona.imgix.net/images/ce429d893cf4ce5867a74c7d71778806.jpg?fit=crop&h=400&w=400','https://prod-mercadona.imgix.net/images/3c8ffb2f62bbad25835d16f3fd82e599.jpg?fit=crop&h=400&w=400']]]],
  ['CENA','Salmón con patata',[
-  ['🐟','Salmón',130,'en crudo',270,26,0,18],
+  ['🐟','Salmón',130,'en crudo',270,26,0,18,'',['https://prod-mercadona.imgix.net/images/01f38934fde6b3511be3a570162a4a83.jpg?fit=crop&h=400&w=400','https://prod-mercadona.imgix.net/images/cbab29eaa2c97e05c228e70adf2abbd9.jpg?fit=crop&h=400&w=400']],
   ['🥔','Patata',200,'en crudo',154,4,34,0.2],
-  ['🥗','Ensalada verde',100,'',20,1.5,3,0.2]]]
+  ['🥗','Ensalada verde',100,'',20,1.5,3,0.2,'',['https://prod-mercadona.imgix.net/images/77a9cc89e7a3c57a49e23a71517e4796.jpg?fit=crop&h=400&w=400','https://prod-mercadona.imgix.net/images/4743ad4e0eb62a754ddc146845c91184.jpg?fit=crop&h=400&w=400']]]]
 ];
 let sup = 0;
 const $ = id => document.getElementById(id);
@@ -177,13 +178,13 @@ function renderSup(){
 }
 function renderMeals(){
   $('meals').innerHTML = MEALS.map((m,mi)=>{const t=tot(m[2]);return `<div class="card"><div class="ch"><div><b>${m[0]} · ${m[1].toUpperCase()}</b><small>≈ ${r(t[0])} kcal · P ${r(t[1])} g · H ${r(t[2])} g · G ${r(t[3])} g</small></div><button class="tick" aria-label="Hecha">✓</button></div>`+
-   m[2].map((f,fi)=>`<button class="row" data-f="${mi},${fi}"><span class="e">${f[0]}</span><span class="n">${f[1]}<small>${[brand(f[8]),f[3]].filter(Boolean).join(' · ')}</small></span><span class="q">${f[2]} ${f[3]=='ml'?'ml':'g'}</span></button>`).join('')+'</div>';}).join('');
+   m[2].map((f,fi)=>`<button class="row" data-f="${mi},${fi}"><span class="e">${f[9]&&(sup==0||!f[8])?`<img src="${f[9][0]}" alt="">`:f[0]}</span><span class="n">${f[1]}<small>${[brand(f[8]),f[3]].filter(Boolean).join(' · ')}</small></span><span class="q">${f[2]} ${f[3]=='ml'?'ml':'g'}</span></button>`).join('')+'</div>';}).join('');
 }
 function food(mi,fi){
-  const f = MEALS[mi][2][fi], b = brand(f[8]), foto = f[9] && sup==0;
+  const f = MEALS[mi][2][fi], b = brand(f[8]), fs = f[9] && (sup==0 || !f[8]) ? f[9] : null;
   sheet(`<h2>${f[1]}</h2><p class="s">${b?b+' · '+SUP[sup]:'Sirve el de cualquier súper'} · ${f[2]} ${f[3]=='ml'?'ml':'g'}</p>
-   <div class="ph">${foto?`<img src="${f[9]}" alt="${f[1]}">`:f[0]}</div>
-   ${f[8]&&!foto?'<p class="tip">En la app ves la foto real del producto de cada súper.</p>':''}
+   ${fs?`<div class="phs">${fs.map((x,i)=>`<figure><div class="ph"><img src="${x}" alt="${f[1]}" loading="lazy"></div><figcaption>${i?'Etiqueta':'Producto'}</figcaption></figure>`).join('')}</div>`:`<div class="ph">${f[0]}</div>`}
+   ${f[8]&&!fs?'<p class="tip">En la app ves la foto real del producto de cada súper.</p>':''}
    <div class="mm"><div><b>${r(f[4])}</b><span>KCAL</span></div><div><b>${r(f[5])}</b><span>PROT</span></div><div><b>${r(f[6])}</b><span>HIDR</span></div><div><b>${r(f[7])}</b><span>GRASA</span></div></div>
    <button class="btn btnr" onclick="closeOv()">Vale</button>`);
 }
