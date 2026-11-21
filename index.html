@@ -141,43 +141,82 @@
     var tr = PIP.v && PIP.v.srcObject && PIP.v.srcObject.getVideoTracks()[0]; if (tr && tr.requestFrame) tr.requestFrame();
   }
   function pipMover(d) { if (!PIP.cs.length) return; PIP.i = (PIP.i + d + PIP.cs.length) % PIP.cs.length; if (PIP.modo === 'rec') pipClip(); else pipDibujar(); }
-  // Modo «rec» (iPhone): todas las comidas se graban seguidas en UN vídeo normal (SEG s cada una).
-  // Las flechas mueven el vídeo a la comida que toca; mientras, el vídeo se repite dentro de su trozo.
-  var SEG = 1.5;
+  // Modo «rec» (iPhone): todas las comidas van en UN vídeo normal, cada una en su tramo de SEG segundos.
+  // Con SEG = 10, los botones ⟲10 / 10⟳ del iPhone pasan justo a la comida anterior/siguiente.
+  var SEG = 10;
   function pipClip() {
-    var v = PIP.v, t = PIP.i * SEG + 0.4;
+    var v = PIP.v, t = PIP.i * SEG + 0.3;
     try { v.currentTime = t; } catch (e) { }
     if (v.paused) v.play().catch(function () { });
   }
-  function pipGrabar() {
+  // Vídeo hecho al momento con un fotograma por comida (WebCodecs + mp4-muxer, sin esperas)
+  function pipCodificar() {
+    var n = PIP.cs.length, W = 720, H = 540, cfg = { codec: 'avc1.42001f', width: W, height: H, bitrate: 1e6, framerate: 1, avc: { format: 'avc' } };
+    return VideoEncoder.isConfigSupported(cfg).then(function (r) {
+      if (!r || !r.supported) throw new Error('sinavc');
+      return window.Mp4Muxer ? 0 : cargar('pip-mp4.js');
+    }).then(function () {
+      var tg = new Mp4Muxer.ArrayBufferTarget(), mx = new Mp4Muxer.Muxer({ target: tg, video: { codec: 'avc', width: W, height: H }, fastStart: 'in-memory', firstTimestampBehavior: 'offset' });
+      var er0 = null, enc = new VideoEncoder({ output: function (ch, meta) { mx.addVideoChunk(ch, meta); }, error: function (e) { er0 = e; } });
+      enc.configure(cfg);
+      var i0 = PIP.i;
+      for (var k = 0; k <= n; k++) {
+        // un fotograma al principio de cada tramo y uno final para que el vídeo dure n × SEG
+        PIP.i = Math.min(k, n - 1); pipDibujar();
+        var f = new VideoFrame(PIP.c, { timestamp: Math.round(k * SEG * 1e6), duration: k < n ? SEG * 1e6 : 1e5 });
+        enc.encode(f, { keyFrame: true }); f.close();
+      }
+      PIP.i = i0;
+      return enc.flush().then(function () {
+        if (er0) throw er0;
+        mx.finalize(); enc.close();
+        if (PIP.url) URL.revokeObjectURL(PIP.url);
+        PIP.url = URL.createObjectURL(new Blob([tg.buffer], { type: 'video/mp4' }));
+      });
+    });
+  }
+  // Respaldo: grabación en tiempo real (tramos cortos)
+  function pipGrabarMR() {
+    SEG = 1.5;
     var tipos = ['video/mp4', 'video/webm;codecs=vp8', 'video/webm'], tipo = '';
     if (!window.MediaRecorder) return Promise.reject(new Error('nopip'));
     for (var k = 0; k < tipos.length; k++) if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(tipos[k])) { tipo = tipos[k]; break; }
     var st = PIP.c.captureStream(15), i0 = PIP.i, n = PIP.cs.length;
     return new Promise(function (ok, ko) {
-      var trozos = [], r = new MediaRecorder(st, tipo ? { mimeType: tipo } : undefined), k = 0, t0;
+      var trozos = [], r = new MediaRecorder(st, tipo ? { mimeType: tipo } : undefined), t0;
       r.ondataavailable = function (e) { if (e.data && e.data.size) trozos.push(e.data); };
       r.onstop = function () { clearInterval(tic); st.getTracks().forEach(function (x) { x.stop(); }); PIP.i = i0; if (PIP.url) URL.revokeObjectURL(PIP.url); PIP.url = URL.createObjectURL(new Blob(trozos, { type: r.mimeType || tipo || 'video/mp4' })); ok(); };
       r.onerror = ko;
       PIP.i = 0; pipDibujar();
       var tic = setInterval(function () {
-        var e = (performance.now() - t0) / 1000, kk = Math.floor(e / SEG);
+        var kk = Math.floor((performance.now() - t0) / 1000 / SEG);
         if (kk >= n) { if (r.state !== 'inactive') r.stop(); return; }
-        if (kk !== PIP.i) { PIP.i = kk; } pipDibujar();
+        PIP.i = kk; pipDibujar();
       }, 50);
       r.start(); t0 = performance.now();
     });
   }
-  // dentro de su trozo: si se pasa, vuelve al principio de la comida
-  function pipVigilar() {
-    var v = PIP.v; if (PIP.modo !== 'rec') return;
-    var ini = PIP.i * SEG, fin = ini + SEG;
-    if (v.currentTime < ini + 0.1 || v.currentTime > fin - 0.25) { try { v.currentTime = ini + 0.4; } catch (e) { } }
+  function pipGrabar() {
+    if (window.VideoEncoder && window.VideoFrame) return pipCodificar().then(function () { SEG = 10; PIP.via = 'mp4'; }, function () { PIP.via = 'mr'; return pipGrabarMR(); });
+    PIP.via = 'mr'; return pipGrabarMR();
+  }
+  // Si el móvil salta en el vídeo (⟲10 / 10⟳), se toma la comida de ese punto; si se acaba el tramo, vuelve a su principio
+  function pipVigilar(e) {
+    var v = PIP.v; if (PIP.modo !== 'rec' || !PIP.cs.length) return;
+    var t = v.currentTime, n = PIP.cs.length;
+    if (e && (e.type === 'seeking' || e.type === 'seeked')) {
+      var k = Math.max(0, Math.min(n - 1, Math.floor(t / SEG)));
+      if (k !== PIP.i) { PIP.i = k; PIP.fl = (PIP.fl || 0) + 1; pipFin(true); }
+      if (t > PIP.i * SEG + SEG - 0.4 || t < PIP.i * SEG) { try { v.currentTime = PIP.i * SEG + 0.3; } catch (er) { } }
+      return;
+    }
+    var ini = PIP.i * SEG;
+    if (!v.seeking && (t > ini + SEG - 0.6 || t < ini)) { try { v.currentTime = ini + 0.3; } catch (er) { } }
   }
   function pipCrear() {
     if (PIP.c) return;
     PIP.c = document.createElement('canvas'); PIP.c.width = 720; PIP.c.height = 540;
-    PIP.v = document.createElement('video'); PIP.v.muted = true; PIP.v.playsInline = true; PIP.v.loop = true; PIP.v.addEventListener('timeupdate', pipVigilar); PIP.v.addEventListener('seeked', pipVigilar); PIP.v.setAttribute('playsinline', ''); PIP.v.setAttribute('muted', ''); PIP.v.setAttribute('autoplay', '');
+    PIP.v = document.createElement('video'); PIP.v.muted = true; PIP.v.playsInline = true; PIP.v.loop = false; PIP.v.addEventListener('timeupdate', pipVigilar); PIP.v.addEventListener('seeking', pipVigilar); PIP.v.addEventListener('seeked', pipVigilar); PIP.v.addEventListener('ended', function () { pipClip(); }); PIP.v.setAttribute('playsinline', ''); PIP.v.setAttribute('muted', ''); PIP.v.setAttribute('autoplay', '');
     PIP.v.style.cssText = 'position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none';
     document.body.appendChild(PIP.v);
     // refresco suave: algunos móviles solo pintan la ventanita si llegan fotogramas
@@ -260,7 +299,7 @@
       r.then(function () { pipFin(true); }, function (er) { if (er && er.message === 'nopip') { pipFin(false, er); pipAviso('Tu móvil o navegador no permite la ventanita flotante.'); } else pipBoton(); });
     }, function (er) { pipFin(false, er); pipAviso('Tu móvil o navegador no permite la ventanita flotante.'); });
   }
-  function pipFin(ok, er) { try { window.dispatchEvent(new CustomEvent('tafpip', { detail: { ok: ok, modo: PIP.modo, fl: PIP.fl || 0, i: PIP.i, err: er ? (er.name || '') + ' ' + (er.message || '') : '' } })); } catch (e) { } }
+  function pipFin(ok, er) { try { window.dispatchEvent(new CustomEvent('tafpip', { detail: { ok: ok, modo: PIP.modo, via: PIP.via || '', fl: PIP.fl || 0, i: PIP.i, err: er ? (er.name || '') + ' ' + (er.message || '') : '' } })); } catch (e) { } }
   function pipAviso(t) {
     var ov = document.createElement('div'); ov.id = 'fidOv';
     ov.innerHTML = '<p style="color:#fff;font:600 16px system-ui,sans-serif;text-align:center;max-width:340px;margin:0"></p><button id="fidNo">Entendido</button>';
@@ -355,7 +394,7 @@
       { t: 'Desayuno', s: 'Tortitas con queso batido · 420 kcal · P 32 g', rows: [['Tortitas de arroz', '40 g'], ['Queso batido 0%', '150 g'], ['Miel', '10 g']] },
       { t: 'Comida', s: 'Pasta con pollo · 808 kcal · P 54 g', rows: [['Pasta blanca (en crudo)', '153 g'], ['Pechuga de pollo', '117 g'], ['Aceite de oliva', '10 g'], ['Verdura', 'al gusto']] },
       { t: 'Cena', s: 'Arroz con atún · 650 kcal · P 45 g', rows: [['Arroz (en crudo)', '80 g'], ['Atún al natural', '2 latas'], ['Aguacate', '60 g']] }];
-    window.addEventListener('tafpip', function (e) { document.getElementById('pdRes').textContent = (e.detail.ok ? '✅ Ventanita abierta' : '❌ No se abre') + ' (prueba ' + (e.detail.modo === 'rec' ? 2 : 1) + ')' + (e.detail.fl ? ' · flechas: ' + e.detail.fl + ' · comida ' + (e.detail.i + 1) : '') + (e.detail.err ? ' · ' + e.detail.err : ''); });
+    window.addEventListener('tafpip', function (e) { document.getElementById('pdRes').textContent = (e.detail.ok ? '✅ Ventanita abierta' : '❌ No se abre') + ' (prueba ' + (e.detail.modo === 'rec' ? 2 : 1) + ')' + (e.detail.fl ? ' · flechas: ' + e.detail.fl + ' · comida ' + (e.detail.i + 1) : '') + (e.detail.via ? ' · ' + e.detail.via : '') + (e.detail.err ? ' · ' + e.detail.err : ''); });
     [].forEach.call(pd.querySelectorAll('button'), function (b) { b.onclick = function () { var m = b.getAttribute('data-m'); if (m === 'auto') { document.getElementById('pdRes').textContent = 'Preparando…'; pipAuto({ comidas: ejemplo, i: 1, ver: true }).then(function () { document.getElementById('pdRes').textContent = 'Listo: ahora desliza hacia arriba para salir (sin tocar nada más)'; }); return; } document.getElementById('pdRes').textContent = 'Abriendo…'; pipAbrir({ comidas: ejemplo, i: 1, modo: m }); }; });
   } else {
   // Google reserva el parámetro "c": los enlaces antiguos ?c= se pasan como ?cliente=
