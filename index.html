@@ -163,48 +163,76 @@
     PIP.cs.forEach(function (m, k) { p = p.then(function () { return una(k).then(function (u) { out[k] = u; }); }); });
     return p.then(function () { (PIP.clips || []).forEach(function (u) { URL.revokeObjectURL(u); }); PIP.clips = out; PIP.i = i0; });
   }
+  function pipCrear() {
+    if (PIP.c) return;
+    PIP.c = document.createElement('canvas'); PIP.c.width = 720; PIP.c.height = 540;
+    PIP.v = document.createElement('video'); PIP.v.muted = true; PIP.v.playsInline = true; PIP.v.loop = true; PIP.v.setAttribute('playsinline', ''); PIP.v.setAttribute('muted', ''); PIP.v.setAttribute('autoplay', '');
+    PIP.v.style.cssText = 'position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none';
+    document.body.appendChild(PIP.v);
+    // refresco suave: algunos móviles solo pintan la ventanita si llegan fotogramas
+    setInterval(function () { if (PIP.modo === 'stream' && pipActiva()) pipDibujar(); }, 1000);
+    if ('mediaSession' in navigator) {
+      var ms = navigator.mediaSession;
+      try { ms.metadata = new MediaMetadata({ title: 'Dieta TAF', artist: 'TeamAngelFit' }); } catch (er) { }
+      [['previoustrack', -1], ['nexttrack', 1], ['seekbackward', -1], ['seekforward', 1]].forEach(function (a) { try { ms.setActionHandler(a[0], function () { pipMover(a[1]); }); } catch (er) { } });
+    }
+  }
+  function pipActiva() { return !!PIP.v && (document.pictureInPictureElement === PIP.v || PIP.v.webkitPresentationMode === 'picture-in-picture'); }
+  // Deja el vídeo listo (cargado y reproduciéndose). Devuelve una promesa.
+  function pipPreparar() {
+    pipCrear();
+    var v = PIP.v, clave = PIP.modo + '|' + JSON.stringify(PIP.cs);
+    if (PIP.clave === clave && v.readyState >= 2) { if (PIP.modo === 'rec') pipClip(); else pipDibujar(); return Promise.resolve(); }
+    var p;
+    if (PIP.modo === 'rec') p = (PIP.clave === clave && PIP.clips ? Promise.resolve() : pipGrabar()).then(function () { v.srcObject = null; v.src = PIP.clips[PIP.i]; });
+    else { pipDibujar(); if (!v.srcObject) { v.removeAttribute('src'); v.srcObject = PIP.c.captureStream(10); } p = Promise.resolve(); }
+    return p.then(function () {
+      PIP.clave = clave;
+      return new Promise(function (ok) {
+        if (v.readyState >= 2) { v.play().catch(function () { }); ok(); return; }
+        var t = setTimeout(ok, 3000);
+        v.addEventListener('loadeddata', function f() { v.removeEventListener('loadeddata', f); clearTimeout(t); ok(); });
+        v.play().catch(function () { });
+      });
+    });
+  }
+  // Se llama DENTRO del toque, sin esperas (Safari lo exige)
+  function pipPedirYa() {
+    var v = PIP.v;
+    try { v.play(); } catch (e) { }
+    if (pipActiva()) return Promise.resolve();
+    if (v.requestPictureInPicture && document.pictureInPictureEnabled !== false) return v.requestPictureInPicture();
+    if (v.webkitSupportsPresentationMode && v.webkitSupportsPresentationMode('picture-in-picture')) { v.webkitSetPresentationMode('picture-in-picture'); return Promise.resolve(); }
+    return Promise.reject(new Error('nopip'));
+  }
+  function pipBoton() {
+    var ov = document.createElement('div'); ov.id = 'fidOv';
+    ov.innerHTML = '<button id="fidSi">Abrir dieta flotante</button><button id="fidNo">Cancelar</button>';
+    document.body.appendChild(ov);
+    document.getElementById('fidNo').onclick = function () { ov.remove(); };
+    document.getElementById('fidSi').onclick = function () {
+      ov.remove();
+      var r; try { r = pipPedirYa(); } catch (er) { r = Promise.reject(er); }
+      r.then(function () { pipFin(true); }, function (er) { pipFin(false, er); pipAviso(er && er.message === 'nopip' ? 'Tu móvil o navegador no permite la ventanita flotante. En iPhone ábrela desde Safari; en Android, desde Chrome.' : 'No se ha podido abrir la ventanita flotante en este móvil.'); });
+    };
+  }
   function pipAbrir(d) {
     PIP.cs = d.comidas || []; PIP.i = Math.max(0, Math.min(d.i || 0, PIP.cs.length - 1));
-    PIP.modo = d.modo || (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'rec' : 'stream');
-    if (!PIP.c) {
-      PIP.c = document.createElement('canvas'); PIP.c.width = 720; PIP.c.height = 540;
-      PIP.v = document.createElement('video'); PIP.v.muted = true; PIP.v.playsInline = true; PIP.v.loop = true; PIP.v.setAttribute('playsinline', ''); PIP.v.setAttribute('muted', '');
-      PIP.v.style.cssText = 'position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none';
-      document.body.appendChild(PIP.v);
-      // refresco suave: algunos móviles solo pintan la ventanita si llegan fotogramas
-      setInterval(function () { if (PIP.modo === 'stream' && (document.pictureInPictureElement === PIP.v || PIP.v.webkitPresentationMode === 'picture-in-picture')) pipDibujar(); }, 1000);
-      if ('mediaSession' in navigator) {
-        var ms = navigator.mediaSession;
-        try { ms.metadata = new MediaMetadata({ title: 'Dieta TAF', artist: 'TeamAngelFit' }); } catch (er) { }
-        [['previoustrack', -1], ['nexttrack', 1], ['seekbackward', -1], ['seekforward', 1]].forEach(function (a) { try { ms.setActionHandler(a[0], function () { pipMover(a[1]); }); } catch (er) { } });
-      }
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    PIP.modo = d.modo || (ios ? 'rec' : 'stream');
+    var clave = PIP.modo + '|' + JSON.stringify(PIP.cs);
+    if (PIP.v && PIP.clave === clave && PIP.v.readyState >= 2) {
+      // ya está listo: se pide en este mismo toque
+      if (PIP.modo === 'rec') pipClip(); else pipDibujar();
+      var r; try { r = pipPedirYa(); } catch (er) { r = Promise.reject(er); }
+      r.then(function () { pipFin(true); }, function (er) { if (er && er.message === 'nopip') { pipFin(false, er); pipAviso('Tu móvil o navegador no permite la ventanita flotante. En iPhone ábrela desde Safari; en Android, desde Chrome.'); } else pipBoton(); });
+      return;
     }
-    var listo;
-    if (PIP.modo === 'rec') { PIP.v.srcObject = null; listo = pipGrabar().then(function () { PIP.v.src = PIP.clips[PIP.i]; }); }
-    else { pipDibujar(); if (!PIP.v.srcObject) { PIP.v.removeAttribute('src'); PIP.v.srcObject = PIP.c.captureStream(10); } listo = Promise.resolve(); }
-    function pedir() {
-      var v = PIP.v;
-      return v.play().catch(function () { }).then(function () {
-        if (document.pictureInPictureElement === v || v.webkitPresentationMode === 'picture-in-picture') return;
-        if (v.requestPictureInPicture && document.pictureInPictureEnabled !== false) return v.requestPictureInPicture();
-        if (v.webkitSupportsPresentationMode && v.webkitSupportsPresentationMode('picture-in-picture')) { v.webkitSetPresentationMode('picture-in-picture'); return; }
-        throw new Error('nopip');
-      });
-    }
-    function boton() {
-      // sin toque válido en esta página (Safari): botón a pantalla completa y se pide con ese toque
-      var ov = document.createElement('div'); ov.id = 'fidOv';
-      ov.innerHTML = '<button id="fidSi">Abrir dieta flotante</button><button id="fidNo">Cancelar</button>';
-      document.body.appendChild(ov);
-      document.getElementById('fidNo').onclick = function () { ov.remove(); };
-      document.getElementById('fidSi').onclick = function () { ov.remove(); pedir().then(function () { pipFin(true); }, function (er) { pipFin(false, er); pipAviso('No se ha podido abrir la ventanita flotante en este móvil.'); }); };
-    }
-    listo.then(function () {
-      if (PIP.modo === 'rec') { boton(); return; } // la grabación tarda: el toque de la app ya no vale
-      pedir().then(function () { pipFin(true); }, function (er) {
-        if (er && er.message === 'nopip') { pipFin(false, er); pipAviso('Tu móvil o navegador no permite la ventanita flotante. En iPhone ábrela desde Safari; en Android, desde Chrome.'); return; }
-        boton();
-      });
+    pipPreparar().then(function () {
+      // en Chrome el toque sigue valiendo unos segundos; en iPhone no → botón a pantalla completa
+      if (ios) { pipBoton(); return; }
+      var r; try { r = pipPedirYa(); } catch (er) { r = Promise.reject(er); }
+      r.then(function () { pipFin(true); }, function (er) { if (er && er.message === 'nopip') { pipFin(false, er); pipAviso('Tu móvil o navegador no permite la ventanita flotante.'); } else pipBoton(); });
     }, function (er) { pipFin(false, er); pipAviso('Tu móvil o navegador no permite la ventanita flotante.'); });
   }
   function pipFin(ok, er) { try { window.dispatchEvent(new CustomEvent('tafpip', { detail: { ok: ok, modo: PIP.modo, err: er ? (er.name || '') + ' ' + (er.message || '') : '' } })); } catch (e) { } }
