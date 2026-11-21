@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#151515">
+<title>Demo TAF App</title>
+<meta name="description" content="Prueba la app de Team Angel Fit con datos de ejemplo.">
+<link rel="icon" href="../icon-192.png">
+<style>
+:root{--red:#e01e1e;--blk:#151515;--bg:#f2f2f2;--line:#e6e6e6;--sub:#777}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{background:#0c0c0c}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--blk)}
+#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;background:var(--bg);position:relative;padding-bottom:84px}
+.demo{background:var(--red);color:#fff;font:700 12px system-ui,sans-serif;letter-spacing:1px;display:flex;align-items:center;justify-content:space-between;padding:7px 14px;padding-top:calc(7px + env(safe-area-inset-top))}
+.demo a{color:#fff;text-decoration:none;font-size:13px}
+header{background:var(--blk);color:#fff;display:flex;align-items:center;gap:14px;padding:12px 16px;position:sticky;top:0;z-index:5}
+.logo{font:italic 900 30px/1 system-ui,sans-serif;letter-spacing:-1px;border-bottom:4px solid var(--red);padding-bottom:2px}
+header b{display:block;font-size:16px}header small{color:#bbb;font-size:12px}
+.wrap{padding:14px 16px}
+h3{font-size:12px;letter-spacing:1.5px;color:#555;margin:18px 2px 8px}
+.macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.m{background:var(--blk);color:#fff;border-radius:12px;text-align:center;padding:10px 2px}
+.m b{display:block;font-size:20px}.m span{font-size:10px;letter-spacing:1px;font-weight:700}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1.5px solid #ccc;background:#fff;border-radius:20px;padding:7px 13px;font:600 13px system-ui,sans-serif;color:#333}
+.chip.on{background:var(--blk);border-color:var(--blk);color:#fff}
+.card{background:#fff;border-radius:14px;overflow:hidden;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.ch{background:var(--blk);color:#fff;padding:11px 14px;display:flex;align-items:center;gap:10px}
+.ch div{flex:1}.ch b{font-size:14px;letter-spacing:.5px}.ch small{display:block;color:#bbb;font-size:11.5px;margin-top:2px}
+.tick{width:30px;height:30px;border-radius:50%;border:2px solid #666;background:none;color:#fff;font-size:15px;flex:none}
+.tick.on{background:var(--red);border-color:var(--red)}
+.row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;font:inherit;color:inherit}
+.row:first-child{border-top:0}
+.row .e{font-size:20px;width:26px;text-align:center}
+.row .n{flex:1;font-weight:600;font-size:15px}.row .n small{display:block;font-weight:400;color:var(--sub);font-size:12px}
+.row .q{font-weight:800;font-size:16px}
+.tip{font-size:12.5px;color:var(--sub);text-align:center;margin:6px 0 2px}
+.tip b{color:var(--red)}
+.ex{padding:12px 14px;border-top:1px solid var(--line)}
+.ex:first-child{border-top:0}
+.exh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.exh b{flex:1;font-size:15px}.exh small{color:var(--sub);font-size:12px}
+.vid{border:0;background:#f1f1f1;border-radius:8px;padding:6px 9px;font:600 12px system-ui,sans-serif;color:#333}
+.set{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:14px}
+.set span{width:62px;color:#555}.set em{font-style:normal;flex:1;color:#333}
+.set input{width:64px;padding:7px;border:1.5px solid #ddd;border-radius:8px;font:600 14px system-ui,sans-serif;text-align:center}
+.sb{width:34px;height:34px;border-radius:8px;border:1.5px solid #ccc;background:#fff;font-size:16px}
+.sb.on{background:var(--red);border-color:var(--red);color:#fff}
+.prog{height:8px;background:#ddd;border-radius:4px;overflow:hidden;margin:4px 0 2px}.prog i{display:block;height:100%;width:0;background:var(--red);transition:width .3s}
+.feat{display:flex;gap:12px;padding:13px 14px;border-top:1px solid var(--line)}
+.feat:first-child{border-top:0}.feat .e{font-size:22px}.feat b{display:block;font-size:14.5px}.feat p{font-size:13px;color:#555;margin-top:2px;line-height:1.35}
+svg.ch2{display:block;width:100%;height:auto}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #ddd;display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav button{flex:1;border:0;background:none;padding:9px 0 10px;font:600 12px system-ui,sans-serif;color:#777}
+nav button i{display:block;font-style:normal;font-size:21px;margin-bottom:2px}
+nav button.on{color:var(--red)}
+.cta{background:var(--blk);color:#fff;border-radius:14px;padding:16px;text-align:center;margin-top:18px}
+.cta b{display:block;font-size:16px;margin-bottom:4px}.cta p{color:#bbb;font-size:13px;margin-bottom:12px}
+.btn{display:block;padding:14px;border-radius:12px;font:800 16px system-ui,sans-serif;text-decoration:none;color:#fff;margin-top:8px;border:0;width:100%}
+.wa{background:#1fa855}.ig{background:var(--red)}.gr{background:#2a2a2a;font-size:14px}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;display:none;align-items:flex-end;justify-content:center}
+.ov.show{display:flex}
+.sheet{background:#fff;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto;animation:up .22s ease-out}
+.sheet.mid{border-radius:18px;margin:0 16px auto;align-self:center}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.sheet h2{font-size:19px;margin-bottom:4px}.sheet .s{color:var(--sub);font-size:13px;margin-bottom:12px}
+.ph{width:150px;height:150px;margin:6px auto 12px;border-radius:12px;background:#f4f4f4;display:flex;align-items:center;justify-content:center;font-size:70px;overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:contain;background:#fff}
+.mm{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;margin:10px 0 4px}
+.mm div{background:#f2f2f2;border-radius:10px;padding:8px 2px}.mm b{display:block;font-size:16px}.mm span{font-size:10px;color:#666;font-weight:700}
+.wel{text-align:center}.wel .logo{display:inline-block;font-size:46px;color:var(--blk);margin-bottom:10px}
+.wel p{color:#444;font-size:14.5px;line-height:1.45;margin:6px 0}
+.wel ul{text-align:left;list-style:none;padding:0;margin:14px 0 6px}.wel li{padding:6px 0;font-size:14.5px}
+.btnr{background:var(--red)}
+.lock{text-align:center;padding:30px 10px 0}.lock .e{font-size:54px}.lock h2{margin:8px 0 6px;font-size:21px}.lock p{color:#555;font-size:14.5px;line-height:1.45}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="demo"><span>DEMO · DATOS DE EJEMPLO</span><a href="../qr/">✕ Salir</a></div>
+  <header><div class="logo">TAF</div><div><b>Laura ♀</b><small>Plan: Definición · Bajar grasa</small></div></header>
+
+  <!-- DIETA -->
+  <section id="t-dieta" class="wrap">
+    <div class="macros" id="macros"></div>
+    <h3>TU SÚPER</h3>
+    <div class="chips" id="supers"></div>
+    <p class="tip">Toca un alimento para ver <b>la foto del producto</b> de tu súper</p>
+    <h3>TU DÍA DE HOY</h3>
+    <div id="meals"></div>
+  </section>
+
+  <!-- ENTRENO -->
+  <section id="t-entreno" class="wrap" hidden>
+    <h3>DÍA A · PIERNA Y GLÚTEO</h3>
+    <div class="prog"><i id="pbar"></i></div>
+    <p class="tip" id="ptxt">0 de 13 series hechas</p>
+    <div class="card" id="exs" style="margin-top:10px"></div>
+  </section>
+
+  <!-- PROGRESO -->
+  <section id="t-prog" class="wrap" hidden>
+    <h3>TU PESO · 8 SEMANAS</h3>
+    <div class="card" style="padding:12px 10px 6px"><svg class="ch2" id="chart" viewBox="0 0 320 160"></svg>
+      <p class="tip" style="margin:4px 0 8px"><b>-2,9 kg</b> desde que empezaste</p></div>
+    <h3>CADA SEMANA</h3>
+    <div class="card">
+      <div class="feat"><div class="e">📋</div><div><b>Revisión semanal</b><p>Me mandas peso, fotos y cómo te has sentido desde la app.</p></div></div>
+      <div class="feat"><div class="e">🔧</div><div><b>Te ajusto el plan</b><p>Cambio la dieta y el entreno según tu progreso. Lo ves al momento.</p></div></div>
+      <div class="feat"><div class="e">🌙</div><div><b>Chicas: según tu ciclo</b><p>La dieta y el entreno se adaptan a cada fase.</p></div></div>
+      <div class="feat"><div class="e">🔔</div><div><b>Avisos al móvil</b><p>Te recuerdo la revisión y te aviso cuando hay cambios.</p></div></div>
+    </div>
+  </section>
+
+  <!-- MÁS -->
+  <section id="t-mas" class="wrap" hidden>
+    <div class="lock"><div class="e">🔒</div><h2>El resto, cuando empieces</h2>
+      <p>Esto es solo un trocito. La app es mía, hecha para trabajar contigo: tu dieta, tu entreno y tu progreso en el móvil, y yo detrás ajustándolo todo.</p></div>
+    <div class="cta"><b>¿La quieres con tu plan?</b><p>Escríbeme TAF por privado y te explico cómo funciona.</p>
+      <a class="btn wa" href="https://wa.me/34675497618?text=Hola%20Angel%2C%20he%20probado%20la%20demo%20de%20la%20app%20TAF%20y%20quiero%20info">Escríbeme por WhatsApp</a>
+      <a class="btn ig" href="https://instagram.com/teamangelfit">Escríbeme por Instagram</a>
+      <a class="btn gr" href="../qr/">Ver precios</a></div>
+  </section>
+
+  <nav>
+    <button class="on" data-t="dieta"><i>🍽️</i>Dieta</button>
+    <button data-t="entreno"><i>🏋️</i>Entreno</button>
+    <button data-t="prog"><i>📈</i>Progreso</button>
+    <button data-t="mas"><i>🔒</i>Más</button>
+  </nav>
+</div>
+
+<div class="ov show" id="ov"><div class="sheet" id="sheet"></div></div>
+
+<script>
+const WA = 'https://wa.me/34675497618?text=Hola%20Angel%2C%20he%20probado%20la%20demo%20de%20la%20app%20TAF%20y%20quiero%20info';
+const SUP = ['Mercadona','Lidl','Carrefour','Dia','Aldi'];
+// marca propia del súper elegido (los genéricos sin marca no cambian)
+const brand = k => k ? (sup==0 ? 'Hacendado' : 'Marca propia') : '';
+// [emoji, nombre, cantidad, nota, kcal, P, H, G, marca, foto (solo Mercadona)]
+const MEALS = [
+ ['DESAYUNO','Tortitas con queso y pavo',[
+  ['🍘','Tortitas de arroz',30,'≈ 4 tortitas',115,2.4,24,0.9,'tort','img/tortitas.jpg'],
+  ['🧀','Queso fresco light',100,'',104,12,3.5,4.5,'queso','img/queso.jpg'],
+  ['🦃','Pechuga de pavo',60,'en lonchas',60,13,0.6,0.8,'pavo'],
+  ['🍌','Plátano',120,'≈ 1 plátano',107,1.3,24,0.4]]],
+ ['COMIDA','Arroz con pollo y brócoli',[
+  ['🍚','Arroz basmati',70,'en seco',249,5,54,0.6,'arroz'],
+  ['🍗','Pechuga de pollo',150,'en crudo',165,35,0,2.6],
+  ['🥦','Brócoli',150,'',51,4,6,0.6],
+  ['🫒','Aceite de oliva',10,'≈ 1 cucharada',90,0,0,10]]],
+ ['MERIENDA','Gachas de avena',[
+  ['🥣','Copos de avena',40,'en seco',150,5,24,2.8,'avena'],
+  ['🥛','Leche desnatada',250,'ml',85,8.5,12,0.5,'leche']]],
+ ['CENA','Salmón con patata',[
+  ['🐟','Salmón',130,'en crudo',270,26,0,18],
+  ['🥔','Patata',200,'en crudo',154,4,34,0.2],
+  ['🥗','Ensalada verde',100,'',20,1.5,3,0.2]]]
+];
+let sup = 0;
+const $ = id => document.getElementById(id);
+const r = x => Math.round(x);
+
+function tot(items){return items.reduce((a,f)=>[a[0]+f[4],a[1]+f[5],a[2]+f[6],a[3]+f[7]],[0,0,0,0]);}
+function renderMacros(){
+  const t = MEALS.reduce((a,m)=>tot(m[2]).map((v,i)=>a[i]+v),[0,0,0,0]);
+  $('macros').innerHTML = [['KCAL',t[0]],['PROTEÍNA',t[1]],['HIDRATOS',t[2]],['GRASA',t[3]]]
+    .map(([n,v])=>`<div class="m"><b>${r(v)}</b><span>${n}</span></div>`).join('');
+}
+function renderSup(){
+  $('supers').innerHTML = SUP.map((s,i)=>`<button class="chip${i==sup?' on':''}" data-s="${i}">${s}</button>`).join('');
+}
+function renderMeals(){
+  $('meals').innerHTML = MEALS.map((m,mi)=>{const t=tot(m[2]);return `<div class="card"><div class="ch"><div><b>${m[0]} · ${m[1].toUpperCase()}</b><small>≈ ${r(t[0])} kcal · P ${r(t[1])} g · H ${r(t[2])} g · G ${r(t[3])} g</small></div><button class="tick" aria-label="Hecha">✓</button></div>`+
+   m[2].map((f,fi)=>`<button class="row" data-f="${mi},${fi}"><span class="e">${f[0]}</span><span class="n">${f[1]}<small>${[brand(f[8]),f[3]].filter(Boolean).join(' · ')}</small></span><span class="q">${f[2]} ${f[3]=='ml'?'ml':'g'}</span></button>`).join('')+'</div>';}).join('');
+}
+function food(mi,fi){
+  const f = MEALS[mi][2][fi], b = brand(f[8]), foto = f[9] && sup==0;
+  sheet(`<h2>${f[1]}</h2><p class="s">${b?b+' · '+SUP[sup]:'Sirve el de cualquier súper'} · ${f[2]} ${f[3]=='ml'?'ml':'g'}</p>
+   <div class="ph">${foto?`<img src="${f[9]}" alt="${f[1]}">`:f[0]}</div>
+   ${f[8]&&!foto?'<p class="tip">En la app ves la foto real del producto de cada súper.</p>':''}
+   <div class="mm"><div><b>${r(f[4])}</b><span>KCAL</span></div><div><b>${r(f[5])}</b><span>PROT</span></div><div><b>${r(f[6])}</b><span>HIDR</span></div><div><b>${r(f[7])}</b><span>GRASA</span></div></div>
+   <button class="btn btnr" onclick="closeOv()">Vale</button>`);
+}
+
+const EX = [
+ ['Hip thrust',4,'8-10 reps'],['Sentadilla búlgara',3,'10 reps por pierna'],['Prensa',3,'12 reps'],['Curl femoral',3,'12 reps']
+];
+function renderEx(){
+  $('exs').innerHTML = EX.map((e,ei)=>`<div class="ex"><div class="exh"><b>${e[0]}</b><button class="vid" data-v="${ei}">▶ Técnica</button></div>`+
+    Array.from({length:e[1]},(_,s)=>`<div class="set"><span>Serie ${s+1}</span><em>${e[2]}</em><input inputmode="decimal" placeholder="kg"><button class="sb">✓</button></div>`).join('')+'</div>').join('');
+}
+function updProg(){
+  const all = document.querySelectorAll('.sb'), on = document.querySelectorAll('.sb.on').length;
+  $('pbar').style.width = (on/all.length*100)+'%';
+  $('ptxt').textContent = on==all.length ? '¡Entreno completado! 💪' : `${on} de ${all.length} series hechas`;
+  if(on==all.length) setTimeout(()=>sheet(`<div class="wel"><div style="font-size:50px">💪</div><h2>¡Entreno hecho!</h2><p>En la app guardas tus pesos y yo veo cómo progresas para ajustarte el plan.</p>${ctaBtns()}</div>`),400);
+}
+
+function renderChart(){
+  const w=[64.8,64.3,64.1,63.6,63.4,62.8,62.4,61.9], x=i=>24+i*40, y=v=>18+(65.2-v)/3.6*120;
+  let g='';
+  [65,64,63,62].forEach(v=>g+=`<line x1="20" x2="312" y1="${y(v)}" y2="${y(v)}" stroke="#eee"/><text x="2" y="${y(v)+4}" font-size="10" fill="#999">${v}</text>`);
+  const pts=w.map((v,i)=>x(i)+','+y(v)).join(' ');
+  g+=`<polyline points="${pts}" fill="none" stroke="#e01e1e" stroke-width="3" stroke-linejoin="round"/>`;
+  w.forEach((v,i)=>g+=`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="#151515"/><text x="${x(i)}" y="156" font-size="9.5" fill="#999" text-anchor="middle">S${i+1}</text>`);
+  g+=`<text x="${x(7)}" y="${y(61.9)-10}" font-size="11" font-weight="700" fill="#151515" text-anchor="middle">61,9</text>`;
+  $('chart').innerHTML=g;
+}
+
+function ctaBtns(){return `<a class="btn wa" href="${WA}">Escríbeme por WhatsApp</a><a class="btn ig" href="https://instagram.com/teamangelfit">Escríbeme por Instagram</a><button class="btn gr" onclick="closeOv()">Seguir mirando</button>`;}
+function sheet(h){$('sheet').innerHTML=h;$('ov').classList.add('show');}
+function closeOv(){$('ov').classList.remove('show');}
+$('ov').onclick = e => { if(e.target.id=='ov') closeOv(); };
+
+const seen = new Set(['dieta']); let ctaShown = false;
+function tab(t){
+  document.querySelectorAll('section').forEach(s=>s.hidden = s.id!='t-'+t);
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));
+  scrollTo(0,0); seen.add(t);
+  if(!ctaShown && seen.has('entreno') && seen.has('prog') && t!='mas'){ ctaShown=true;
+    setTimeout(()=>sheet(`<div class="wel"><div class="logo">TAF</div><h2>¿Te gusta?</h2><p>Así trabajo con mis clientes: todo en tu móvil y yo detrás ajustándolo. Escríbeme TAF por privado y te cuento.</p>${ctaBtns()}</div>`),1500); }
+}
+document.querySelector('nav').onclick = e => { const b=e.target.closest('button'); if(b) tab(b.dataset.t); };
+document.body.addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if(c){ sup=+c.dataset.s; renderSup(); renderMeals(); return; }
+  const f = e.target.closest('.row'); if(f){ food(...f.dataset.f.split(',').map(Number)); return; }
+  const t = e.target.closest('.tick'); if(t){ t.classList.toggle('on'); return; }
+  const s = e.target.closest('.sb'); if(s){ s.classList.toggle('on'); updProg(); return; }
+  const v = e.target.closest('.vid'); if(v){ sheet(`<div class="wel"><div style="font-size:50px">🎬</div><h2>${EX[v.dataset.v][0]}</h2><p>En la app tienes el vídeo de la técnica de cada ejercicio, grabado por mí.</p><button class="btn btnr" onclick="closeOv()">Vale</button></div>`); }
+});
+
+renderMacros(); renderSup(); renderMeals(); renderEx(); renderChart();
+sheet(`<div class="wel"><div class="logo">TAF</div><h2>Así es la app TAF</h2>
+ <p>Mi app propia: la herramienta con la que trabajo con mis clientes.</p>
+ <ul><li>🍽️ Tu dieta, con los productos de tu súper</li><li>🏋️ Tu entreno, apuntando tus pesos</li><li>📈 Tu progreso y tu revisión semanal</li></ul>
+ <p style="font-size:13px;color:#888">Es una demo con datos de ejemplo. Tócalo todo.</p>
+ <button class="btn btnr" onclick="closeOv()">Probar la demo</button></div>`);
+</script>
+</body>
+</html>
