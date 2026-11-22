@@ -287,6 +287,9 @@
   function pipInstalada() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
   function pipSafari(d) {
     var url = 'https://' + location.host + location.pathname + '?pipver=1#' + encodeURIComponent(JSON.stringify({ c: d.comidas || [], i: d.i || 0 }));
+    // iOS 17 o más: se salta directamente a Safari sin preguntar; si no se ha podido, sale el aviso con el botón
+    var v = +((navigator.userAgent.match(/OS (\d+)_/) || [])[1] || 0);
+    if (v >= 17 && !pipSafari.aviso) { location.href = 'x-safari-' + url; setTimeout(function () { if (!document.hidden) { pipSafari.aviso = 1; pipSafari(d); } }, 1500); return; }
     var ov = document.createElement('div'); ov.id = 'fidOv';
     ov.innerHTML = '<p style="color:#fff;font:600 16px system-ui,sans-serif;text-align:center;max-width:340px;margin:0">En el iPhone la ventanita flotante solo funciona en Safari. Se abre tu dieta en Safari y ahí tocas «Abrir dieta flotante».</p><a id="fidSi" style="display:block;box-sizing:border-box;width:100%;max-width:340px;padding:16px;border-radius:12px;background:#e01e1e;color:#fff;font:700 16px system-ui,sans-serif;text-align:center;text-decoration:none">Abrir en Safari</a><button id="fidNo">Cancelar</button>';
     document.body.appendChild(ov);
@@ -410,7 +413,7 @@
     var pg = document.createElement('div');
     pg.style.cssText = 'position:fixed;inset:0;overflow:auto;padding:calc(env(safe-area-inset-top) + 24px) 20px 24px;color:#fff;font:16px/1.4 system-ui,-apple-system,sans-serif;text-align:center';
     pg.innerHTML = '<div style="font:800 italic 40px system-ui">TAF</div><div style="width:60px;height:4px;background:#e01e1e;margin:4px auto 20px"></div>' +
-      '<p style="margin:0 0 20px;color:#ccc">Toca el botón y luego sal a WhatsApp o donde quieras: tu dieta se queda encima. Con ⟲10 / 10⟳ cambias de comida.</p>' +
+      '<p style="margin:0 0 20px;color:#ccc">Toca en cualquier parte de la pantalla y sal a WhatsApp o donde quieras: tu dieta se queda encima. Con ⟲10 / 10⟳ cambias de comida.</p>' +
       '<button id="pvSi" style="display:block;width:100%;padding:18px;border:0;border-radius:14px;background:#e01e1e;color:#fff;font:800 18px system-ui">📌 Abrir dieta flotante</button><p id="pvRes" style="margin:16px 0 0;color:#aaa;font-size:14px"></p>';
     document.body.appendChild(pg);
     var pvb = document.getElementById('pvSi');
@@ -418,8 +421,9 @@
     else {
       PIP.cs = pv.c; PIP.i = Math.max(0, Math.min(pv.i || 0, pv.c.length - 1)); PIP.modo = pipIOS() ? 'rec' : 'stream';
       pvb.disabled = true; pvb.style.opacity = '.5'; pvb.textContent = 'Preparando…';
-      pipPreparar().then(function () { pvb.disabled = false; pvb.style.opacity = ''; pvb.textContent = '📌 Abrir dieta flotante'; });
-      pvb.onclick = function () {
+      pipPreparar().then(function () { pvb.disabled = false; pvb.style.opacity = ''; pvb.textContent = '📌 Toca para abrir'; });
+      pg.style.cursor = 'pointer';
+      pg.onclick = function () {
         var r; try { r = pipPedirYa(); } catch (er) { r = Promise.reject(er); }
         r.then(function () { document.getElementById('pvRes').textContent = '✅ Lista. Ya puedes salir de Safari.'; }, function (er) { document.getElementById('pvRes').textContent = 'No se ha podido abrir (' + ((er && er.name) || '') + '). Prueba otra vez.'; });
       };
