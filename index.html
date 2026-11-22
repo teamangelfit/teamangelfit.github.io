@@ -282,14 +282,28 @@
     });
   }
   // La app manda las comidas al entrar en la Dieta: el vídeo se deja preparado para abrir la ventanita con un solo toque
+  // iPhone con la app instalada en la pantalla de inicio: Apple no deja ventanitas flotantes ahí → se abre en Safari
+  function pipIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function pipInstalada() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+  function pipSafari(d) {
+    var url = 'https://' + location.host + location.pathname + '?pipver=1#' + encodeURIComponent(JSON.stringify({ c: d.comidas || [], i: d.i || 0 }));
+    var ov = document.createElement('div'); ov.id = 'fidOv';
+    ov.innerHTML = '<p style="color:#fff;font:600 16px system-ui,sans-serif;text-align:center;max-width:340px;margin:0">En el iPhone la ventanita flotante solo funciona en Safari. Se abre tu dieta en Safari y ahí tocas «Abrir dieta flotante».</p><a id="fidSi" style="display:block;box-sizing:border-box;width:100%;max-width:340px;padding:16px;border-radius:12px;background:#e01e1e;color:#fff;font:700 16px system-ui,sans-serif;text-align:center;text-decoration:none">Abrir en Safari</a><button id="fidNo">Cancelar</button>';
+    document.body.appendChild(ov);
+    var a = document.getElementById('fidSi');
+    a.href = 'x-safari-' + url;
+    a.onclick = function () { ov.remove(); setTimeout(function () { if (!document.hidden) window.open(url, '_blank'); }, 900); };
+    document.getElementById('fidNo').onclick = function () { ov.remove(); };
+  }
   function pipCargar(d) {
-    if (pipActiva()) return;
+    if (pipActiva() || (pipIOS() && pipInstalada())) return;
     PIP.cs = d.comidas || []; PIP.i = Math.max(0, Math.min(d.i || 0, PIP.cs.length - 1));
     var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     PIP.modo = ios ? 'rec' : 'stream';
     if (PIP.cs.length) pipPreparar().catch(function () { });
   }
   function pipAbrir(d) {
+    if (!d.modo && pipIOS() && pipInstalada()) { pipSafari(d); return; }
     PIP.cs = d.comidas || []; PIP.i = Math.max(0, Math.min(d.i || 0, PIP.cs.length - 1));
     var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     PIP.modo = d.modo || (ios ? 'rec' : 'stream');
@@ -389,6 +403,28 @@
     });
   })();
   // Página de prueba de la dieta flotante (no abre la app): teamangelfit.github.io/?pipdemo=1
+  if (/[?&]pipver=1/.test(location.search)) {
+    document.getElementById('wrap').remove(); document.getElementById('splash').remove();
+    document.body.style.background = '#151515';
+    var pv = { c: [], i: 0 }; try { pv = JSON.parse(decodeURIComponent(location.hash.slice(1))); } catch (e) { }
+    var pg = document.createElement('div');
+    pg.style.cssText = 'position:fixed;inset:0;overflow:auto;padding:calc(env(safe-area-inset-top) + 24px) 20px 24px;color:#fff;font:16px/1.4 system-ui,-apple-system,sans-serif;text-align:center';
+    pg.innerHTML = '<div style="font:800 italic 40px system-ui">TAF</div><div style="width:60px;height:4px;background:#e01e1e;margin:4px auto 20px"></div>' +
+      '<p style="margin:0 0 20px;color:#ccc">Toca el botón y luego sal a WhatsApp o donde quieras: tu dieta se queda encima. Con ⟲10 / 10⟳ cambias de comida.</p>' +
+      '<button id="pvSi" style="display:block;width:100%;padding:18px;border:0;border-radius:14px;background:#e01e1e;color:#fff;font:800 18px system-ui">📌 Abrir dieta flotante</button><p id="pvRes" style="margin:16px 0 0;color:#aaa;font-size:14px"></p>';
+    document.body.appendChild(pg);
+    var pvb = document.getElementById('pvSi');
+    if (!(pv.c || []).length) { pvb.disabled = true; document.getElementById('pvRes').textContent = 'No hay comidas. Vuelve a la app y toca 📌 otra vez.'; }
+    else {
+      PIP.cs = pv.c; PIP.i = Math.max(0, Math.min(pv.i || 0, pv.c.length - 1)); PIP.modo = pipIOS() ? 'rec' : 'stream';
+      pvb.disabled = true; pvb.style.opacity = '.5'; pvb.textContent = 'Preparando…';
+      pipPreparar().then(function () { pvb.disabled = false; pvb.style.opacity = ''; pvb.textContent = '📌 Abrir dieta flotante'; });
+      pvb.onclick = function () {
+        var r; try { r = pipPedirYa(); } catch (er) { r = Promise.reject(er); }
+        r.then(function () { document.getElementById('pvRes').textContent = '✅ Lista. Ya puedes salir de Safari.'; }, function (er) { document.getElementById('pvRes').textContent = 'No se ha podido abrir (' + ((er && er.name) || '') + '). Prueba otra vez.'; });
+      };
+    }
+  } else
   if (/[?&]pipdemo=1/.test(location.search)) {
     document.getElementById('wrap').remove(); document.getElementById('splash').remove();
     document.body.style.background = '#151515';
